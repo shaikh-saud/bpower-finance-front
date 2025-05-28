@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +16,9 @@ import { useSidebar } from "./components/ui/sidebar";
 import PaymentGateway from "./pages/PaymentGateway";
 import BlogDetail from "./pages/BlogDetail";
 import Blog from "./pages/Blog";
+import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
+import { AuthProvider } from "./contexts/AuthContext";
 import { HelmetProvider } from "react-helmet-async";
 
 const queryClient = new QueryClient();
@@ -38,7 +42,7 @@ const MobileSidebarToggle = () => {
 // Helper to access location inside App
 const AppContent = () => {
   const location = useLocation();
-  const hideNav = location.pathname === "/payment";
+  const hideNav = location.pathname === "/payment" || location.pathname === "/auth";
 
   return (
     <>
@@ -47,6 +51,8 @@ const AppContent = () => {
         <Route path="/" element={<Index />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/admin/*" element={<AdminPanel />} />
         <Route path="/payment" element={<PaymentGateway />} />
         <Route path="/blog" element={<Blog />} />
@@ -61,11 +67,13 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </AuthProvider>
       </TooltipProvider>
     </HelmetProvider>
   </QueryClientProvider>
