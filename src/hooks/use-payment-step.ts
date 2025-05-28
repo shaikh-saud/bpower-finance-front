@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -14,7 +15,7 @@ export type PaymentMethod =
   | 'upi'
   | 'wallet';
 
-interface UsePaymentStepReturn {
+export interface UsePaymentStepReturn {
   currentStep: PaymentStep;
   selectedMethod: PaymentMethod;
   progress: number;
