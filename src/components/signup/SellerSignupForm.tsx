@@ -1,6 +1,9 @@
+
 import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -47,11 +50,16 @@ export const sellerFormSchema = z.object({
         .string()
         .length(10, { message: 'PAN must be exactly 10 characters' })
         .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, { message: 'Invalid PAN format' }),
+    password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+    confirmPassword: z.string().min(6, { message: 'Password must be at least 6 characters' }),
     categories: z.record(z.boolean()).refine((categories) => {
         return Object.values(categories).some(value => value === true);
     }, {
         message: "You must select at least one product category",
     }),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
 });
 
 export type SellerFormValues = z.infer<typeof sellerFormSchema>;
@@ -66,6 +74,10 @@ export const productCategories = [
 ];
 
 const SellerSignUpForm = () => {
+    const { signUp } = useAuth();
+    const navigate = useNavigate();
+    const [isLoading, setIsLoading] = React.useState(false);
+
     // Initialize the form
     const form = useForm<SellerFormValues>({
         resolver: zodResolver(sellerFormSchema),
@@ -81,6 +93,8 @@ const SellerSignUpForm = () => {
             phone: '',
             address: '',
             panNumber: '',
+            password: '',
+            confirmPassword: '',
             categories: {
                 electronics: false,
                 fmcg: false,
@@ -93,10 +107,16 @@ const SellerSignUpForm = () => {
     });
 
     // Handle form submission
-    const onSubmit = (data: SellerFormValues) => {
-        console.log('Seller form submitted:', data);
-        toast.success('Registration submitted successfully!');
-        form.reset();
+    const onSubmit = async (data: SellerFormValues) => {
+        setIsLoading(true);
+        try {
+            await signUp(data.email, data.password, data.ownerName, 'seller');
+            navigate('/');
+        } catch (error) {
+            console.error('Seller signup error:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -115,9 +135,10 @@ const SellerSignUpForm = () => {
                 <div className="flex justify-center mt-8">
                     <Button
                         type="submit"
-                        className="bg-bpower-blue hover:bg-bpower-green  duration-500 transition-all ease-in-out text-white px-8"
+                        className="bg-bpower-blue hover:bg-bpower-green duration-500 transition-all ease-in-out text-white px-8"
+                        disabled={isLoading}
                     >
-                        Register as Seller
+                        {isLoading ? 'Creating Account...' : 'Register as Seller'}
                     </Button>
                 </div>
             </form>

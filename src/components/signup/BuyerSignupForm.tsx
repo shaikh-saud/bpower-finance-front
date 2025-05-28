@@ -2,6 +2,8 @@
 import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,11 +32,20 @@ const buyerFormSchema = z.object({
         .string()
         .min(10, { message: 'Phone number must be at least 10 digits' })
         .regex(/^[0-9]+$/, { message: 'Phone number must contain only digits' }),
+    password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+    confirmPassword: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
 });
 
 type BuyerFormValues = z.infer<typeof buyerFormSchema>;
 
 const BuyerSignUpForm = () => {
+    const { signUp } = useAuth();
+    const navigate = useNavigate();
+    const [isLoading, setIsLoading] = React.useState(false);
+
     // Initialize the form
     const form = useForm<BuyerFormValues>({
         resolver: zodResolver(buyerFormSchema),
@@ -44,14 +55,22 @@ const BuyerSignUpForm = () => {
             gstin: '',
             email: '',
             phone: '',
+            password: '',
+            confirmPassword: '',
         },
     });
 
     // Handle form submission
-    const onSubmit = (data: BuyerFormValues) => {
-        console.log('Buyer form submitted:', data);
-        toast.success('Registration submitted successfully!');
-        form.reset();
+    const onSubmit = async (data: BuyerFormValues) => {
+        setIsLoading(true);
+        try {
+            await signUp(data.email, data.password, data.name, 'buyer');
+            navigate('/');
+        } catch (error) {
+            console.error('Buyer signup error:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -127,14 +146,43 @@ const BuyerSignUpForm = () => {
                             </FormItem>
                         )}
                     />
+
+                    <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Password</FormLabel>
+                                <FormControl>
+                                    <Input type="password" placeholder="Create a password" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Confirm Password</FormLabel>
+                                <FormControl>
+                                    <Input type="password" placeholder="Confirm your password" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                 </div>
 
                 <div className="flex justify-center mt-8">
                     <Button
                         type="submit"
                         className="bg-bpower-blue hover:bg-bpower-green duration-500 transition-all ease-in-out text-white px-8"
+                        disabled={isLoading}
                     >
-                        Register as Buyer
+                        {isLoading ? 'Creating Account...' : 'Register as Buyer'}
                     </Button>
                 </div>
             </form>

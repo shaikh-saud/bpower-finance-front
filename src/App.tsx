@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import Marketplace from "./pages/Marketplace";
 import NavBar from "./components/NavBar";
 import SignUp from "./pages/SignUp";
+import Login from "./pages/Login";
 import AdminPanel from "./pages/AdminPanel";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
@@ -51,6 +52,7 @@ const AppContent = () => {
         <Route path="/" element={<Index />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/admin/*" element={<AdminPanel />} />

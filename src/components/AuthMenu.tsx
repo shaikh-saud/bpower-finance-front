@@ -27,7 +27,7 @@ const AuthMenu = () => {
       <div className="flex gap-2">
         <Button
           variant="outline"
-          onClick={() => navigate('/auth')}
+          onClick={() => navigate('/login')}
           className="text-bpower-blue border-bpower-blue hover:bg-bpower-blue hover:text-white"
         >
           Sign In
