@@ -32,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -40,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -50,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName: string, role: 'buyer' | 'seller') => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -61,9 +63,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Signup error details:', error);
+        throw error;
+      }
+
+      console.log('Signup successful:', data);
       toast.success('Account created successfully! Please check your email to verify your account.');
     } catch (error: any) {
+      console.error('SignUp error:', error);
       toast.error(error.message || 'Failed to create account');
       throw error;
     }
@@ -71,14 +79,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Signin error details:', error);
+        throw error;
+      }
+
+      console.log('Signin successful:', data);
       toast.success('Signed in successfully!');
     } catch (error: any) {
+      console.error('SignIn error:', error);
       toast.error(error.message || 'Failed to sign in');
       throw error;
     }
@@ -90,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       toast.success('Signed out successfully!');
     } catch (error: any) {
+      console.error('SignOut error:', error);
       toast.error(error.message || 'Failed to sign out');
     }
   };
