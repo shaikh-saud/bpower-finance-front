@@ -5,9 +5,9 @@ import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import CTAButton from './CTAButton';
 import { Menu, X } from 'lucide-react';
+import AuthMenu from './AuthMenu';
 
 const NavBar = () => {
-
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -28,6 +28,7 @@ const NavBar = () => {
     const toggleMenu = () => {
         setMenuOpen(!menuOpen);
     };
+
     return (
         <header
             className={cn(
@@ -96,10 +97,7 @@ const NavBar = () => {
                     >
                         Blog
                     </Link>
-                    {/* <CTAButton text="Join Now" size="sm" /> */}
-                    <Button asChild className="bg-bpower-blue hover:bg-bpower-green text-white px-7  rounded-full transition-all ease-in-out duration-500">
-                        <Link to="/signup">Signup</Link>
-                    </Button>
+                    <AuthMenu />
                 </nav>
 
                 {/* Mobile Menu Button */}
@@ -158,14 +156,14 @@ const NavBar = () => {
                         >
                             Blog
                         </Link>
-                        {/* <CTAButton text="Join Now" size="sm" className="w-full" /> */}
-                        <Button asChild className="bg-bpower-blue hover:bg-bpower-green text-white px-7  rounded-full transition-all ease-in-out duration-500 w-full">
-                            <Link to="/signup">Signup</Link>
-                        </Button>
+                        <div className="pt-2">
+                            <AuthMenu />
+                        </div>
                     </div>
                 </div>
             )}
-        </header>)
-}
+        </header>
+    );
+};
 
-export default NavBar
+export default NavBar;

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -59,7 +58,7 @@ const AuthRedirect = () => {
 const AppContent = () => {
   const location = useLocation();
   const { user, loading } = useAuth();
-  const hideNav = location.pathname === "/payment" || location.pathname === "/auth";
+  const hideNav = location.pathname === "/payment" || location.pathname === "/auth" || location.pathname === "/admin-login";
 
   // Don't render anything until auth is loaded
   if (loading) {
@@ -83,10 +82,14 @@ const AppContent = () => {
         <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/auth" element={<AuthRedirect />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/admin/*" element={<AdminPanel />} />
         <Route path="/payment" element={<PaymentGateway />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogDetail />} />
+        <Route path="/seller-application" element={<SellerApplication />} />
+        <Route path="/buyer-dashboard" element={<BuyerDashboard />} />
+        <Route path="/seller-dashboard" element={<SellerDashboard />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
