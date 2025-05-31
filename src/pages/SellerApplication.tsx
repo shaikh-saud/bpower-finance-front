@@ -2,359 +2,228 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Store, Upload, FileText } from 'lucide-react';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 const SellerApplication = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [applicationForm, setApplicationForm] = useState({
-    businessName: '',
-    businessType: '',
-    businessAddress: '',
-    businessPhone: '',
-    businessEmail: '',
-    gstNumber: '',
-    panNumber: '',
-    bankAccount: '',
-    ifscCode: '',
-    businessDescription: '',
-    productCategories: [] as string[],
-    yearEstablished: '',
-    expectedMonthlyVolume: '',
-    agreeToTerms: false
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    business_name: '',
+    business_type: '',
+    business_address: '',
+    contact_phone: '',
+    business_registration_number: '',
+    gst_number: '',
+    bank_account_number: '',
+    bank_name: '',
+    ifsc_code: '',
+    account_holder_name: ''
   });
 
-  const businessTypes = [
-    'Sole Proprietorship',
-    'Partnership',
-    'Private Limited Company',
-    'Public Limited Company',
-    'LLP',
-    'One Person Company'
-  ];
-
-  const productCategories = [
-    'Electronics',
-    'Fashion & Apparel',
-    'Home & Kitchen',
-    'Sports & Fitness',
-    'Books & Education',
-    'Beauty & Personal Care',
-    'Automotive',
-    'Industrial Supplies',
-    'Food & Beverages',
-    'Health & Wellness'
-  ];
-
-  const handleCategoryChange = (category: string, checked: boolean) => {
-    if (checked) {
-      setApplicationForm(prev => ({
-        ...prev,
-        productCategories: [...prev.productCategories, category]
-      }));
-    } else {
-      setApplicationForm(prev => ({
-        ...prev,
-        productCategories: prev.productCategories.filter(cat => cat !== category)
-      }));
-    }
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmitApplication = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!applicationForm.agreeToTerms) {
-      toast.error('Please agree to the terms and conditions');
-      return;
-    }
+    if (!user) return;
 
-    if (applicationForm.productCategories.length === 0) {
-      toast.error('Please select at least one product category');
-      return;
-    }
-
-    setIsLoading(true);
-    
+    setLoading(true);
     try {
-      // Here you would submit the application to your backend
-      // For demo purposes, we'll simulate success
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast.success('Seller application submitted successfully! You will be notified once approved.');
-      navigate('/');
-    } catch (error) {
-      console.error('Application submission error:', error);
+      const { error } = await supabase
+        .from('seller_applications')
+        .insert({
+          user_id: user.id,
+          ...formData
+        });
+
+      if (error) {
+        if (error.code === '23505') { // Unique constraint violation
+          toast.error('You have already submitted a seller application.');
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success('Seller application submitted successfully! We will review your application and notify you via email.');
+        navigate('/');
+      }
+    } catch (error: any) {
+      console.error('Error submitting application:', error);
       toast.error('Failed to submit application. Please try again.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 py-12 mt-[100px]">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="mx-auto h-16 w-16 bg-bpower-blue rounded-full flex items-center justify-center mb-4">
-              <Store className="h-8 w-8 text-white" />
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gray-50 py-12 mt-[100px]">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-bpower-blue mb-4">Become a Seller</h1>
+              <p className="text-gray-600">Fill out the application form to start selling on our marketplace</p>
             </div>
-            <h1 className="text-3xl font-bold text-bpower-blue mb-2">
-              Become a Seller
-            </h1>
-            <p className="text-gray-600">
-              Join our marketplace and start selling your products to thousands of customers
-            </p>
-          </div>
 
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>Seller Application Form</CardTitle>
-              <CardDescription>
-                Please provide accurate information about your business. All applications are reviewed by our admin team.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmitApplication} className="space-y-6">
-                {/* Business Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Business Information</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Seller Application Form</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Business Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="businessName">Business Name *</Label>
+                      <Label htmlFor="business_name">Business Name *</Label>
                       <Input
-                        id="businessName"
-                        value={applicationForm.businessName}
-                        onChange={(e) => setApplicationForm(prev => ({ ...prev, businessName: e.target.value }))}
-                        placeholder="Enter your business name"
+                        id="business_name"
+                        value={formData.business_name}
+                        onChange={(e) => handleInputChange('business_name', e.target.value)}
                         required
                       />
                     </div>
                     
                     <div>
-                      <Label htmlFor="businessType">Business Type *</Label>
+                      <Label htmlFor="business_type">Business Type *</Label>
                       <Select 
-                        value={applicationForm.businessType}
-                        onValueChange={(value) => setApplicationForm(prev => ({ ...prev, businessType: value }))}
+                        value={formData.business_type} 
+                        onValueChange={(value) => handleInputChange('business_type', value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select business type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {businessTypes.map(type => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
-                          ))}
+                          <SelectItem value="manufacturer">Manufacturer</SelectItem>
+                          <SelectItem value="distributor">Distributor</SelectItem>
+                          <SelectItem value="retailer">Retailer</SelectItem>
+                          <SelectItem value="service_provider">Service Provider</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="businessAddress">Business Address *</Label>
+                    <Label htmlFor="business_address">Business Address *</Label>
                     <Textarea
-                      id="businessAddress"
-                      value={applicationForm.businessAddress}
-                      onChange={(e) => setApplicationForm(prev => ({ ...prev, businessAddress: e.target.value }))}
-                      placeholder="Enter complete business address"
+                      id="business_address"
+                      value={formData.business_address}
+                      onChange={(e) => handleInputChange('business_address', e.target.value)}
                       required
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="businessPhone">Business Phone *</Label>
+                      <Label htmlFor="contact_phone">Contact Phone *</Label>
                       <Input
-                        id="businessPhone"
-                        value={applicationForm.businessPhone}
-                        onChange={(e) => setApplicationForm(prev => ({ ...prev, businessPhone: e.target.value }))}
-                        placeholder="Enter business phone number"
+                        id="contact_phone"
+                        value={formData.contact_phone}
+                        onChange={(e) => handleInputChange('contact_phone', e.target.value)}
                         required
                       />
                     </div>
                     
                     <div>
-                      <Label htmlFor="businessEmail">Business Email *</Label>
+                      <Label htmlFor="business_registration_number">Business Registration Number</Label>
                       <Input
-                        id="businessEmail"
-                        type="email"
-                        value={applicationForm.businessEmail}
-                        onChange={(e) => setApplicationForm(prev => ({ ...prev, businessEmail: e.target.value }))}
-                        placeholder="Enter business email"
-                        required
+                        id="business_registration_number"
+                        value={formData.business_registration_number}
+                        onChange={(e) => handleInputChange('business_registration_number', e.target.value)}
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="yearEstablished">Year Established</Label>
-                      <Input
-                        id="yearEstablished"
-                        type="number"
-                        value={applicationForm.yearEstablished}
-                        onChange={(e) => setApplicationForm(prev => ({ ...prev, yearEstablished: e.target.value }))}
-                        placeholder="e.g., 2020"
-                        min="1900"
-                        max={new Date().getFullYear()}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="expectedMonthlyVolume">Expected Monthly Volume</Label>
-                      <Select 
-                        value={applicationForm.expectedMonthlyVolume}
-                        onValueChange={(value) => setApplicationForm(prev => ({ ...prev, expectedMonthlyVolume: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select expected volume" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1-10">1-10 orders</SelectItem>
-                          <SelectItem value="11-50">11-50 orders</SelectItem>
-                          <SelectItem value="51-100">51-100 orders</SelectItem>
-                          <SelectItem value="100+">100+ orders</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Legal Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Legal & Financial Information</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="gstNumber">GST Number</Label>
-                      <Input
-                        id="gstNumber"
-                        value={applicationForm.gstNumber}
-                        onChange={(e) => setApplicationForm(prev => ({ ...prev, gstNumber: e.target.value }))}
-                        placeholder="Enter GST number"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="panNumber">PAN Number *</Label>
-                      <Input
-                        id="panNumber"
-                        value={applicationForm.panNumber}
-                        onChange={(e) => setApplicationForm(prev => ({ ...prev, panNumber: e.target.value }))}
-                        placeholder="Enter PAN number"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="bankAccount">Bank Account Number *</Label>
-                      <Input
-                        id="bankAccount"
-                        value={applicationForm.bankAccount}
-                        onChange={(e) => setApplicationForm(prev => ({ ...prev, bankAccount: e.target.value }))}
-                        placeholder="Enter bank account number"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="ifscCode">IFSC Code *</Label>
-                      <Input
-                        id="ifscCode"
-                        value={applicationForm.ifscCode}
-                        onChange={(e) => setApplicationForm(prev => ({ ...prev, ifscCode: e.target.value }))}
-                        placeholder="Enter IFSC code"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Product Categories */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Product Categories *</h3>
-                  <p className="text-sm text-gray-600">Select the categories of products you plan to sell</p>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {productCategories.map(category => (
-                      <div key={category} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={category}
-                          checked={applicationForm.productCategories.includes(category)}
-                          onCheckedChange={(checked) => handleCategoryChange(category, checked as boolean)}
-                        />
-                        <Label htmlFor={category} className="text-sm">{category}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Business Description */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Business Description</h3>
-                  
                   <div>
-                    <Label htmlFor="businessDescription">Tell us about your business</Label>
-                    <Textarea
-                      id="businessDescription"
-                      value={applicationForm.businessDescription}
-                      onChange={(e) => setApplicationForm(prev => ({ ...prev, businessDescription: e.target.value }))}
-                      placeholder="Describe your business, products, and what makes you unique..."
-                      rows={4}
+                    <Label htmlFor="gst_number">GST Number</Label>
+                    <Input
+                      id="gst_number"
+                      value={formData.gst_number}
+                      onChange={(e) => handleInputChange('gst_number', e.target.value)}
                     />
                   </div>
-                </div>
 
-                {/* Terms and Conditions */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="agreeToTerms"
-                      checked={applicationForm.agreeToTerms}
-                      onCheckedChange={(checked) => setApplicationForm(prev => ({ ...prev, agreeToTerms: checked as boolean }))}
-                    />
-                    <Label htmlFor="agreeToTerms" className="text-sm">
-                      I agree to the{' '}
-                      <Button variant="link" className="p-0 h-auto text-bpower-blue">
-                        Terms and Conditions
-                      </Button>
-                      {' '}and{' '}
-                      <Button variant="link" className="p-0 h-auto text-bpower-blue">
-                        Seller Policies
-                      </Button>
-                    </Label>
+                  {/* Bank Details */}
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold mb-4">Bank Account Details</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <Label htmlFor="bank_name">Bank Name *</Label>
+                        <Input
+                          id="bank_name"
+                          value={formData.bank_name}
+                          onChange={(e) => handleInputChange('bank_name', e.target.value)}
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="account_holder_name">Account Holder Name *</Label>
+                        <Input
+                          id="account_holder_name"
+                          value={formData.account_holder_name}
+                          onChange={(e) => handleInputChange('account_holder_name', e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                      <div>
+                        <Label htmlFor="bank_account_number">Bank Account Number *</Label>
+                        <Input
+                          id="bank_account_number"
+                          value={formData.bank_account_number}
+                          onChange={(e) => handleInputChange('bank_account_number', e.target.value)}
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="ifsc_code">IFSC Code *</Label>
+                        <Input
+                          id="ifsc_code"
+                          value={formData.ifsc_code}
+                          onChange={(e) => handleInputChange('ifsc_code', e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-bpower-blue hover:bg-bpower-green text-lg py-6"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Submitting Application...' : 'Submit Seller Application'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                  <div className="flex gap-4 pt-6">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate('/')}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 bg-bpower-blue hover:bg-bpower-green"
+                    >
+                      {loading ? 'Submitting...' : 'Submit Application'}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 };
 

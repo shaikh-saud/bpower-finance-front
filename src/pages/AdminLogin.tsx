@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,8 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const AdminLogin = () => {
+  const { adminUser, adminLogin } = useAdminAuth();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -17,18 +19,25 @@ const AdminLogin = () => {
     password: ''
   });
 
+  useEffect(() => {
+    // Redirect if already logged in
+    if (adminUser) {
+      navigate('/admin');
+    }
+  }, [adminUser, navigate]);
+
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // Admin authentication logic would go here
-      // For demo purposes, using hardcoded credentials
-      if (loginForm.email === 'admin@bpower.com' && loginForm.password === 'admin123') {
+      const result = await adminLogin(loginForm.email, loginForm.password);
+      
+      if (result.success) {
         toast.success('Admin login successful!');
         navigate('/admin');
       } else {
-        toast.error('Invalid admin credentials');
+        toast.error(result.error || 'Invalid admin credentials');
       }
     } catch (error) {
       console.error('Admin login error:', error);
