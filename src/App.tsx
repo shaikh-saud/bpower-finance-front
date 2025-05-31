@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +11,10 @@ import NavBar from "./components/NavBar";
 import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 import AdminPanel from "./pages/AdminPanel";
+import AdminLogin from "./pages/AdminLogin";
+import SellerApplication from "./pages/SellerApplication";
+import BuyerDashboard from "./pages/BuyerDashboard";
+import SellerDashboard from "./pages/SellerDashboard";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { useSidebar } from "./components/ui/sidebar";
